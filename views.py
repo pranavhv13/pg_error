@@ -168,56 +168,6 @@ def register_event(request, event_id, form_id):
                    'event_form_id': event.form_id })
 
 
-import os
-
-def download_ticket(request, ticket_id):
- 
-    ticket = get_object_or_404(Ticket, ticket_id=ticket_id)
-    event = ticket.event_id 
-    enc_tk_id = ticket.enc_tk_id
-
-    # Create QR code
-    qr = qrcode.QRCode(version=1, box_size=10, border=2)
-    qr.add_data(enc_tk_id)
-    qr.make(fit=True)
-    qr_img = qr.make_image(fill_color="black", back_color="white")
-
-    # Create a blank ticket image
-    ticket_image = Image.open('static/ticket.jpg')
-    draw = ImageDraw.Draw(ticket_image)
-
-    # Define fonts (you may need to adjust the font path)
-    title_font = ImageFont.load_default(size=20)
-    detail_font = ImageFont.load_default()
-
-    center_x, center_y = 150, 100 
-    event_text = f"Event: {event.title}"
-    bbox = draw.textbbox((0, 0), event_text, font=title_font)
-    text_width = bbox[2] - bbox[0]  # Calculate width from the bounding box
-    x_position = center_x - (text_width // 2)
-
-    # Draw event name and QR code on the ticket image
-    draw.text((x_position, center_y), event_text, fill="white", font=title_font)
-    draw.text((125, 425), f"{ticket_id}", fill="black", font=detail_font)
-
-    # Resize QR code and paste it onto the ticket image
-    qr_img = qr_img.resize((170, 170))
-    ticket_image.paste(qr_img, (65, 150))  # Adjust position as needed
-
-    # Define a path to save the ticket image
-    ticket_image_path = f'media/tickets/{ticket_id}.png'
-    ticket_image.save(ticket_image_path, format='PNG')
-
-    with open(ticket_image_path, 'rb') as img_file:
-        response = HttpResponse(img_file.read(), content_type='image/png')
-        response['Content-Disposition'] = f'attachment; filename="{ticket_id}.png"'
-        return response
-
-
-def ticket_scan(request):
-    return render(request,'tk_scan.html')
-
-
 @csrf_exempt
 def payment_callback(request):
     if request.method != 'POST':
